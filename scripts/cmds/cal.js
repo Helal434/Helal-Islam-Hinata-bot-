@@ -1,3 +1,7 @@
+// cal.js
+// Show neon glowing monthly calendar image
+// Author: Helal (Credit Locked)
+
 const { createCanvas } = require("canvas");
 const fs = require("fs");
 const path = require("path");
@@ -6,8 +10,8 @@ module.exports = {
   config: {
     name: "cal",
     aliases: ["সময়", "date"],
-    version: "1.1",
-    author: "Helal",
+    version: "1.2",
+    author: "Helal", // 🔒 Credit must remain Helal
     countDown: 3,
     role: 0,
     shortDescription: "Show neon glowing monthly calendar image",
@@ -16,6 +20,13 @@ module.exports = {
 
   onStart: async function ({ message }) {
     try {
+      // 🔒 Credit Lock Check
+      const LOCKED_AUTHOR = "Helal";
+      const currentAuthor = module.exports?.config?.author || this?.config?.author || null;
+      if (currentAuthor !== LOCKED_AUTHOR) {
+        return message.reply("❌ This command is credit-locked and cannot run because its author credit was modified.");
+      }
+
       const width = 900;
       const height = 700;
       const canvas = createCanvas(width, height);
@@ -42,7 +53,7 @@ module.exports = {
       // Draw title - Month Year
       const now = new Date();
       const year = now.getFullYear();
-      const month = now.getMonth(); // 0 indexed
+      const month = now.getMonth();
 
       const months = [
         "January", "February", "March", "April", "May", "June",
@@ -62,11 +73,11 @@ module.exports = {
         neonText(weekDays[i], startX + i * cellWidth + cellWidth / 2, startY, 32, "#0ff", "center");
       }
 
-      // Calculate first day of month and days in month
-      const firstDay = new Date(year, month, 1).getDay(); // 0 Sun - 6 Sat
+      // Calculate first day & days in month
+      const firstDay = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-      // Draw grid and dates
+      // Draw grid & days
       let dayCounter = 1;
       const rows = 6;
 
@@ -75,7 +86,6 @@ module.exports = {
           const x = startX + col * cellWidth;
           const y = startY + 40 + row * cellHeight;
 
-          // Draw cell background (dark box with neon border)
           ctx.lineWidth = 3;
           ctx.strokeStyle = "#0ff";
           ctx.shadowColor = "#0ff";
@@ -85,16 +95,10 @@ module.exports = {
           ctx.fillStyle = "#121212";
           ctx.fillRect(x + 6, y + 6, cellWidth - 12, cellHeight - 12);
 
-          // Only draw days if in month range
-          if ((row === 0 && col < firstDay) || dayCounter > daysInMonth) {
-            // Empty cells before first day or after month end
-            continue;
-          }
+          if ((row === 0 && col < firstDay) || dayCounter > daysInMonth) continue;
 
-          // Highlight current date
           const today = now.getDate();
           if (dayCounter === today) {
-            // Neon glow background circle behind number
             ctx.beginPath();
             ctx.shadowColor = "#39ff14";
             ctx.shadowBlur = 30;
@@ -104,7 +108,6 @@ module.exports = {
             ctx.shadowBlur = 0;
           }
 
-          // Draw day number (neon)
           neonText(dayCounter.toString(), x + cellWidth / 2, y + cellHeight / 2 + 15, 40, dayCounter === today ? "#39ff14" : "#0ff", "center");
 
           dayCounter++;
@@ -118,7 +121,7 @@ module.exports = {
 
       // Send message + photo
       message.reply({
-        body: `📅 *${months[month]} ${year}* \n\n🟢 Today is highlighted.`,
+        body: `📅 *${months[month]} ${year}*\n\n🟢 Today is highlighted.`,
         attachment: fs.createReadStream(filePath)
       }, () => fs.unlinkSync(filePath));
 

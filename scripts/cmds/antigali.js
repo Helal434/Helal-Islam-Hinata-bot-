@@ -1,9 +1,13 @@
+// antigali.js
+// Auto detect bad words & kick offenders
+// Author: Helal (Credit Locked)
+
 module.exports = {
   config: {
     name: "antigali",
     aliases: ["antibad"],
-    version: "8.2",
-    author: "Helal",
+    version: "8.3",
+    author: "Helal", // 🔒 Must remain Helal
     countDown: 0,
     role: 0,
     shortDescription: "Auto detect bad words & kick offenders",
@@ -11,15 +15,30 @@ module.exports = {
     category: "🛡️ Moderation",
   },
 
-  onStart: async function({ api, event }) {
+  onStart: async function ({ api, event }) {
+    // 🔒 Credit Lock Check
+    const LOCKED_AUTHOR = "Helal";
+    const currentAuthor = module.exports?.config?.author || this?.config?.author || null;
+    if (currentAuthor !== LOCKED_AUTHOR) {
+      return api.sendMessage(
+        "❌ This command is credit-locked and cannot run because its author credit was modified.",
+        event.threadID
+      );
+    }
+
     return api.sendMessage(
       "🛡️ Anti-BadWords system always active!\nAdmins are exempt. ✅",
       event.threadID
     );
   },
 
-  onChat: async function({ api, event }) {
+  onChat: async function ({ api, event }) {
     try {
+      // 🔒 Credit Lock Check
+      const LOCKED_AUTHOR = "Helal";
+      const currentAuthor = module.exports?.config?.author || this?.config?.author || null;
+      if (currentAuthor !== LOCKED_AUTHOR) return;
+
       if (!event.body) return;
       const msg = event.body.toLowerCase();
       const { threadID, senderID, messageID } = event;
@@ -35,14 +54,12 @@ module.exports = {
         "tor mayer","tor baper","toke chudi","chod","jairi","khankir pola","khanki magi"
       ];
 
-      // No bad word = ignore
       if (!badWords.some(word => msg.includes(word))) return;
 
-      // Get thread info to check admin
       const threadInfo = await api.getThreadInfo(threadID);
       const isAdmin = (uid) => threadInfo.adminIDs.some(a => (a.id || a) == uid);
 
-      // 🛑 If sender is admin → ignore
+      // 🛑 Skip if sender is admin
       if (isAdmin(senderID)) return;
 
       global.antigali = global.antigali || {};
@@ -99,5 +116,5 @@ ${warnMsgs[warnCount - 1] || ""}`,
     } catch (err) {
       console.error("AntiGali Error:", err);
     }
-  }
+  },
 };

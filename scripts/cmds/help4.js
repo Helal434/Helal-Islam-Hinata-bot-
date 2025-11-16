@@ -2,8 +2,8 @@ const fs = require("fs");
 
 module.exports = {
   config: {
-    name: "help4",
-    aliases: ["menu4"],
+    name: "hhelp",
+    aliases: ["menu"],
     version: "2.0",
     author: "Helal",
     role: 0,

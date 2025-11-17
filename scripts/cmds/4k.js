@@ -1,69 +1,70 @@
 const axios = require("axios");
-const fs = require("fs");
-const path = require("path");
+
+const mahmud = async () => {
+  const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/exe/main/baseApiUrl.json");
+  return base.data.mahmud;
+};
 
 module.exports = {
   config: {
     name: "4k",
-    aliases: ["remini"],
-    version: "1.2",
-    author: "nexo_here",
-    countDown: 5,
+    version: "1.7",
+    author: "MahMUD", // fixed by sifu
+    countDown: 10,
     role: 0,
-    shortDescription: "Upscale image to 4K",
-    longDescription: "Upscale an image using smfahim.xyz",
     category: "image",
+    description: "Enhance or restore image quality using Remini AI.",
     guide: {
-      en: "{pn} [url] or reply to an image"
-    },
-    usePrefix: true
+      en: "{pn} [url] or reply with image"
+    }
   },
 
-  onStart: async function ({ api, event, args }) {
-    let url = null;
+  onStart: async function ({ message, event, args }) {
+    
+    const obfuscatedAuthor = String.fromCharCode(77, 97, 104, 77, 85, 68); 
+    if (module.exports.config.author !== obfuscatedAuthor) {
+      return api.sendMessage("You are not authorized to change the author name.", event.threadID, event.messageID);
+    }
+    const startTime = Date.now();
+    let imgUrl;
 
-    // ✅ If user replied to an image
     if (event.messageReply?.attachments?.[0]?.type === "photo") {
-      url = event.messageReply.attachments[0].url;
+      imgUrl = event.messageReply.attachments[0].url;
     }
 
-    // ✅ Or used direct image URL
-    if (!url && args[0]?.startsWith("http")) {
-      url = args[0];
+    else if (args[0]) {
+      imgUrl = args.join(" ");
     }
 
-    // ❌ If no valid image source
-    if (!url) {
-      return api.sendMessage("❌ Reply to an image or provide a direct image URL.", event.threadID, event.messageID);
+    if (!imgUrl) {
+      return message.reply("Baby, Please reply to an image or provide an image URL");
     }
+  
+    const waitMsg = await message.reply("Remini images loading...wait");
+    message.reaction("🍭", event.messageID);
 
     try {
-      api.setMessageReaction("🔄", event.messageID, () => {}, true);
+      
+      const apiUrl = `${await mahmud()}/api/remini?imgUrl=${encodeURIComponent(imgUrl)}`;
 
-      const res = await axios.get(`https://smfahim.xyz/4k?url=${encodeURIComponent(url)}`);
-      if (!res.data?.status || !res.data?.image) {
-        api.setMessageReaction("❌", event.messageID, () => {}, true);
-        return api.sendMessage("⚠️ Upscaling failed. Try another image.", event.threadID, event.messageID);
-      }
+      const res = await axios.get(apiUrl, { responseType: "stream" });
+      if (waitMsg?.messageID) message.unsend(waitMsg.messageID);
 
-      const img = await axios.get(res.data.image, { responseType: "arraybuffer" });
-      const imgPath = path.join(__dirname, "cache", `${event.senderID}_4k.jpg`);
-      fs.writeFileSync(imgPath, Buffer.from(img.data, "binary"));
+      message.reaction("✅", event.messageID);
 
-      api.sendMessage(
-        { attachment: fs.createReadStream(imgPath) },
-        event.threadID,
-        () => {
-          fs.unlinkSync(imgPath);
-          api.setMessageReaction("✅", event.messageID, () => {}, true);
-        },
-        event.messageID
-      );
+      const processTime = ((Date.now() - startTime) / 1000).toFixed(2);
 
-    } catch (err) {
-      console.error("[4k] Error:", err.message);
-      api.setMessageReaction("❌", event.messageID, () => {}, true);
-      api.sendMessage("❌ Error occurred while processing image.", event.threadID, event.messageID);
+      message.reply({
+        body: `🎀| Here's your Remini image baby`,
+        attachment: res.data
+      });
+
+    } catch (error) {
+  
+      if (waitMsg?.messageID) message.unsend(waitMsg.messageID);
+
+      message.reaction("❎", event.messageID);
+      message.reply(`🥹error,`);
     }
   }
 };
